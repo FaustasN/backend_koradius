@@ -3,7 +3,7 @@ dotenv.config();
 
 import app from './app.js';
 import { db } from './config/db.js';
-import { initDb } from './config/initDb.js';
+import { initDb } from './config/initdb.js';
 
 const PORT = process.env.PORT || 8080;
 
