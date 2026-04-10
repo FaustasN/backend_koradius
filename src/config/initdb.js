@@ -124,9 +124,9 @@ export async function initDb() {
       const hashedPassword = await bcrypt.hash(defaultPassword, 12);
 
       await db.query(
-        `INSERT INTO admins (username, password_hash, role)
-         VALUES ($1, $2, $3)`,
-        ['admin', hashedPassword, 'admin']
+        `INSERT INTO admins (username, password_hash)
+         VALUES ($1, $2)`,
+        ['admin', hashedPassword]
       );
 
       console.log('Default admin created');
