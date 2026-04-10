@@ -115,7 +115,7 @@ export async function initDb() {
     await db.query(`CREATE INDEX IF NOT EXISTS idx_contacts_resolved ON contacts(is_resolved)`);
     //await db.query(`CREATE INDEX IF NOT EXISTS idx_user_reviews_approved ON user_reviews(is_approved)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_admins_username ON admins(username)`);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_admins_active ON admins(is_active)`);
+    //await db.query(`CREATE INDEX IF NOT EXISTS idx_admins_active ON admins(is_active)`);
 
     const adminExists = await db.query(`SELECT COUNT(*) FROM admins`);
 
