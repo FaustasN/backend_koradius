@@ -12,6 +12,8 @@ import { galleryRouter } from './routes/galleryRoute.js';
 import { travelPacketRouter } from './routes/travelPacketRoute.js';
 import { authRouter } from './routes/authRoute.js';
 import { adminReviewRouter } from './routes/adminReviewRoute.js';
+import { payseraRouter } from './routes/payseraRoute.js';
+import { adminPaymentRouter } from './routes/adminPaymentRoute.js';
 
 const app = express();
 
@@ -32,10 +34,11 @@ app.use('/api/reviews', reviewRouter);
 app.use('/api/gallery', galleryRouter);
 app.use('/api/travel-packets', travelPacketRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/admin/payments', adminPaymentRouter);
 app.use('/api/admin/reviews', adminReviewRouter);
 app.use('/api/admin/upload', uploadRoutes);
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-
+app.use('/api/paysera', payseraRouter);
 app.use(errorHandler);
 
 export default app;

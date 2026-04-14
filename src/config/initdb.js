@@ -88,39 +88,56 @@ export async function initDb() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+   await db.query(`
+  CREATE TABLE IF NOT EXISTS payments (
+    id SERIAL PRIMARY KEY,
+    order_id VARCHAR(40) UNIQUE NOT NULL,
+    travel_packet_id INTEGER REFERENCES travel_packets(id) ON DELETE SET NULL,
 
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS notifications (
-        id SERIAL PRIMARY KEY,
-        type VARCHAR(50) NOT NULL CHECK (type IN ('contact', 'review', 'order', 'system')),
-        title VARCHAR(255) NOT NULL,
-        message TEXT NOT NULL,
-        reference_id INTEGER,
-        reference_type VARCHAR(50),
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        is_read BOOLEAN DEFAULT false,
-        read_by INTEGER REFERENCES admins(id),
-        read_at TIMESTAMP,
-        priority VARCHAR(20) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+    amount INTEGER NOT NULL,
+    currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
+    description TEXT,
+
+    status VARCHAR(20) NOT NULL DEFAULT 'pending'
+      CHECK (status IN ('pending', 'paid', 'failed', 'cancelled', 'refunded')),
+
+    paysera_status INTEGER,
+    is_test BOOLEAN DEFAULT false,
+    payment_method VARCHAR(50),
+
+    pay_amount INTEGER,
+    pay_currency VARCHAR(3),
+
+    customer_email_encrypted TEXT,
+    customer_name_encrypted TEXT,
+    customer_phone_encrypted TEXT,
+    product_info_encrypted TEXT,
+
+    callback_raw JSONB,
+
+    paid_at TIMESTAMP,
+    failed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
     await db.query(`CREATE INDEX IF NOT EXISTS idx_gallery_category ON gallery(category)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_gallery_active ON gallery(is_active)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_travel_packets_category ON travel_packets(category)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_travel_packets_active ON travel_packets(is_active)`);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type)`);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(is_read)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_contacts_resolved ON contacts(is_resolved)`);
-    //await db.query(`CREATE INDEX IF NOT EXISTS idx_user_reviews_approved ON user_reviews(is_approved)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_admins_username ON admins(username)`);
-    //await db.query(`CREATE INDEX IF NOT EXISTS idx_admins_active ON admins(is_active)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_payments_created_at ON payments(created_at)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id)`);
+
 
     const adminExists = await db.query(`SELECT COUNT(*) FROM admins`);
 
     if (parseInt(adminExists.rows[0].count, 10) === 0) {
-      const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'admin12345';
+      const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD;
       const hashedPassword = await bcrypt.hash(defaultPassword, 12);
 
       await db.query(
