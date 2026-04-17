@@ -14,8 +14,14 @@ import { authRouter } from './routes/authRoute.js';
 import { adminReviewRouter } from './routes/adminReviewRoute.js';
 import { payseraRouter } from './routes/payseraRoute.js';
 import { adminPaymentRouter } from './routes/adminPaymentRoute.js';
+import { contactMailRouter } from './routes/contactMailRoute.js';
 
 const app = express();
+
+// Behind one reverse proxy (e.g. nginx), set TRUST_PROXY=1 so rate limits use the real client IP.
+if (process.env.TRUST_PROXY === '1') {
+  app.set('trust proxy', 1);
+}
 
 app.use(helmet());
 
@@ -31,6 +37,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/contacts', contactRouter);
+app.use('/api/contact-mail', contactMailRouter);
 app.use('/api/reviews', reviewRouter);
 app.use('/api/gallery', galleryRouter);
 app.use('/api/travel-packets', travelPacketRouter);

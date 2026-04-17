@@ -7,6 +7,7 @@
     verifyPayseraSignature,
     convertEurosToCents
   } from '../utils/paysera.js';
+  import { runAfterPayseraPaid } from '../services/paymentPaidAfterCallback.js';
 
   const PAYSERA_PROJECT_ID = process.env.PAYSERA_PROJECT_ID;
   const PAYSERA_SIGN_PASSWORD = process.env.PAYSERA_SIGN_PASSWORD;
@@ -297,6 +298,16 @@
             orderid
           ]
         );
+
+        try {
+          await runAfterPayseraPaid({
+            orderId: orderid,
+            callbackData,
+            paymentRow: existingPayment,
+          });
+        } catch (hookError) {
+          console.error('[Paysera] runAfterPayseraPaid failed', hookError);
+        }
 
         return res.send('OK');
       }
