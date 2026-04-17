@@ -37,6 +37,7 @@ export const login = (req, res) => {
 
   return res.status(200).json({
     success: true,
+    token,
     user: {
       username,
       role: 'admin'
@@ -52,7 +53,14 @@ export const validate = (req, res) => {
       return res.status(500).json({ message: 'Server configuration error' });
     }
 
-    const token = req.cookies?.adminToken;
+    const authHeader = req.headers.authorization;
+    const bearerToken =
+      authHeader && authHeader.startsWith('Bearer ')
+        ? authHeader.split(' ')[1]
+        : null;
+
+    const cookieToken = req.cookies?.adminToken;
+    const token = bearerToken || cookieToken;
 
     if (!token) {
       return res.status(401).json({ valid: false, message: 'Unauthorized' });
@@ -67,17 +75,22 @@ export const validate = (req, res) => {
         role: decoded.role
       }
     });
-  } catch {
-    return res.status(401).json({ valid: false, message: 'Invalid or expired token' });
+  } catch (error) {
+    return res.status(401).json({
+      valid: false,
+      message: 'Invalid or expired token'
+    });
   }
 };
 
 export const logout = (_req, res) => {
+  const cookieOptions = getAdminCookieOptions();
+
   res.clearCookie('adminToken', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/'
+    httpOnly: cookieOptions.httpOnly,
+    secure: cookieOptions.secure,
+    sameSite: cookieOptions.sameSite,
+    path: cookieOptions.path
   });
 
   return res.status(200).json({

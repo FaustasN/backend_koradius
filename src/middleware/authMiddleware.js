@@ -9,7 +9,14 @@ export const authMiddleware = (req, res, next) => {
       return res.status(500).json({ message: 'Server configuration error' });
     }
 
-    const token = req.cookies?.adminToken;
+    const authHeader = req.headers.authorization;
+    const bearerToken =
+      authHeader && authHeader.startsWith('Bearer ')
+        ? authHeader.split(' ')[1]  
+        : null;
+
+    const cookieToken = req.cookies?.adminToken;
+    const token = bearerToken || cookieToken;
 
     if (!token) {
       return res.status(401).json({ message: 'Unauthorized' });
