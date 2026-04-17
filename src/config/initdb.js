@@ -1,18 +1,7 @@
-import bcrypt from 'bcryptjs';
 import { db } from './db.js';
 
 export async function initDb() {
   try {
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS admins (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(255) UNIQUE NOT NULL,
-        password_hash VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
     await db.query(`
       CREATE TABLE IF NOT EXISTS contacts (
         id SERIAL PRIMARY KEY,
@@ -26,7 +15,6 @@ export async function initDb() {
         ip_address INET,
         user_agent TEXT,
         is_resolved BOOLEAN DEFAULT false,
-        resolved_by INTEGER REFERENCES admins(id),
         resolved_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -44,7 +32,6 @@ export async function initDb() {
         user_agent TEXT,
         is_approved BOOLEAN DEFAULT false,
         is_featured BOOLEAN DEFAULT false,
-        approved_by INTEGER REFERENCES admins(id),
         approved_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -88,66 +75,49 @@ export async function initDb() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-   await db.query(`
-  CREATE TABLE IF NOT EXISTS payments (
-    id SERIAL PRIMARY KEY,
-    order_id VARCHAR(40) UNIQUE NOT NULL,
-    travel_packet_id INTEGER REFERENCES travel_packets(id) ON DELETE SET NULL,
 
-    amount INTEGER NOT NULL,
-    currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
-    description TEXT,
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS payments (
+        id SERIAL PRIMARY KEY,
+        order_id VARCHAR(40) UNIQUE NOT NULL,
+        travel_packet_id INTEGER REFERENCES travel_packets(id) ON DELETE SET NULL,
 
-    status VARCHAR(20) NOT NULL DEFAULT 'pending'
-      CHECK (status IN ('pending', 'paid', 'failed', 'cancelled', 'refunded')),
+        amount INTEGER NOT NULL,
+        currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
+        description TEXT,
 
-    paysera_status INTEGER,
-    is_test BOOLEAN DEFAULT false,
-    payment_method VARCHAR(50),
+        status VARCHAR(20) NOT NULL DEFAULT 'pending'
+          CHECK (status IN ('pending', 'paid', 'failed', 'cancelled', 'refunded')),
 
-    pay_amount INTEGER,
-    pay_currency VARCHAR(3),
+        paysera_status INTEGER,
+        is_test BOOLEAN DEFAULT false,
+        payment_method VARCHAR(50),
 
-    customer_email_encrypted TEXT,
-    customer_name_encrypted TEXT,
-    customer_phone_encrypted TEXT,
-    product_info_encrypted TEXT,
+        pay_amount INTEGER,
+        pay_currency VARCHAR(3),
 
-    callback_raw JSONB,
+        customer_email_encrypted TEXT,
+        customer_name_encrypted TEXT,
+        customer_phone_encrypted TEXT,
+        product_info_encrypted TEXT,
 
-    paid_at TIMESTAMP,
-    failed_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+        callback_raw JSONB,
+
+        paid_at TIMESTAMP,
+        failed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
     await db.query(`CREATE INDEX IF NOT EXISTS idx_gallery_category ON gallery(category)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_gallery_active ON gallery(is_active)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_travel_packets_category ON travel_packets(category)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_travel_packets_active ON travel_packets(is_active)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_contacts_resolved ON contacts(is_resolved)`);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_admins_username ON admins(username)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_payments_created_at ON payments(created_at)`);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id)`);
-
-
-    const adminExists = await db.query(`SELECT COUNT(*) FROM admins`);
-
-    if (parseInt(adminExists.rows[0].count, 10) === 0) {
-      const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD;
-      const hashedPassword = await bcrypt.hash(defaultPassword, 12);
-
-      await db.query(
-        `INSERT INTO admins (username, password_hash)
-         VALUES ($1, $2)`,
-        ['admin', hashedPassword]
-      );
-
-      console.log('Default admin created');
-    }
 
     console.log('Database initialized');
   } catch (error) {

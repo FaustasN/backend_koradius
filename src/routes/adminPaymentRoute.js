@@ -4,4 +4,4 @@ import { authMiddleware } from '../middleware/authMiddleware.js';
 
 export const adminPaymentRouter = Router();
 
-adminPaymentRouter.get('/', authMiddleware, getAllPayments);
+adminPaymentRouter.get('/', authMiddleware,  getAllPayments);

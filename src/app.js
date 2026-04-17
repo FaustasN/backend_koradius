@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
 import uploadRoutes from './routes/uploadRoute.js';
-
+import cookieParser from 'cookie-parser';
 import { contactRouter } from './routes/contactRoute.js';
 import { reviewRouter } from './routes/reviewRoute.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
@@ -17,14 +17,15 @@ import { adminPaymentRouter } from './routes/adminPaymentRoute.js';
 
 const app = express();
 
-//app.use(helmet());
+app.use(helmet());
+
 app.use(morgan('dev'));
 app.use(cors({
   origin: process.env.FRONTEND_URL,
   credentials: true
 }));
 app.use(express.json());
-
+app.use(cookieParser());
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, message: 'API is running' });
 });
