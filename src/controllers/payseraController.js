@@ -25,27 +25,24 @@
     return `ORD-${Date.now()}-${randomPart}`;
   }
 
-  function encryptIfNeeded(value) {
-    if (!value) return null;
+  function encryptRequired(value) {
+    if (value == null || value === '') return null;
 
-    // Jei raktas nenustatytas, nenutraukiam flow, bet ir nešifruojam
     if (!PAYSERA_ENCRYPTION_KEY) {
-      console.warn('PAYSERA_ENCRYPTION_KEY is not set, storing payment field as plain text');
-      return value;
+      throw new Error('PAYSERA_ENCRYPTION_KEY is not set');
     }
-
+  
     try {
       const iv = crypto.randomBytes(12);
       const key = crypto.createHash('sha256').update(PAYSERA_ENCRYPTION_KEY).digest();
-
+  
       const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
       const encrypted = Buffer.concat([
         cipher.update(String(value), 'utf8'),
         cipher.final()
       ]);
       const authTag = cipher.getAuthTag();
-
-      // Saugojom kaip iv:tag:cipher visi base64, kad vėliau būtų galima iššifruoti
+  
       return [
         iv.toString('base64'),
         authTag.toString('base64'),
@@ -53,9 +50,9 @@
       ].join(':');
     } catch (error) {
       console.error('Failed to encrypt payment field', error);
-      return null;
+      throw new Error('Payment field encryption failed');
     }
-  }
+}
 
   export async function createPayment(req, res, next) {
     try {
@@ -140,10 +137,10 @@
           totalAmountCents,
           'EUR',
           description,
-          encryptIfNeeded(email.trim()),
-          encryptIfNeeded(name.trim()),
-          encryptIfNeeded(phone.trim()),
-          encryptIfNeeded(
+          encryptRequired(email.trim()),
+          encryptRequired(name.trim()),
+          encryptRequired(phone.trim()),
+          encryptRequired(
             JSON.stringify({
               departureDate,
               numberOfPeople: peopleCount,
