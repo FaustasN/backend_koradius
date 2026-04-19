@@ -100,6 +100,8 @@ export async function initDb() {
         customer_name_encrypted TEXT,
         customer_phone_encrypted TEXT,
         product_info_encrypted TEXT,
+        ga_client_id TEXT,
+        number_of_people INTEGER,
 
         callback_raw JSONB,
 

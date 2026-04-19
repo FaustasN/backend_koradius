@@ -8,7 +8,7 @@
     convertEurosToCents
   } from '../utils/paysera.js';
   import { runAfterPayseraPaid } from '../services/paymentPaidAfterCallback.js';
-
+  import { sendGaPurchase } from '../services/sendGaPurchase.js';
   const PAYSERA_PROJECT_ID = process.env.PAYSERA_PROJECT_ID;
   const PAYSERA_SIGN_PASSWORD = process.env.PAYSERA_SIGN_PASSWORD;
   const BACKEND_URL = process.env.BACKEND_URL;
@@ -65,7 +65,8 @@
         phone,
         email,
         departureDate,
-        numberOfPeople
+        numberOfPeople,
+        gaClientId
       } = req.body;
 
       if (
@@ -127,9 +128,11 @@
           customer_email_encrypted,
           customer_name_encrypted,
           customer_phone_encrypted,
-          product_info_encrypted
+          product_info_encrypted,
+          ga_client_id,
+          number_of_people
         )
-        VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7, $8, $9)
+        VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7, $8, $9, $10, $11)
         `,
         [
           orderId,
@@ -148,7 +151,9 @@
               unitPrice,
               totalAmountEur
             })
-          )
+          ),
+          gaClientId || null,
+          peopleCount
         ]
       );
 
@@ -298,7 +303,7 @@
             orderid
           ]
         );
-
+      
         try {
           await runAfterPayseraPaid({
             orderId: orderid,
@@ -308,7 +313,7 @@
         } catch (hookError) {
           console.error('[Paysera] runAfterPayseraPaid failed', hookError);
         }
-
+      
         return res.send('OK');
       }
 
